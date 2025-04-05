@@ -1,11 +1,11 @@
-# service-account.yaml
+# Service Account
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: secrets-service-account
   namespace: ${NAMESPACE}
 ---
-# cluster-role.yaml
+# Cluster Role
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -15,7 +15,7 @@ rules:
   resources: ["secrets"]
   verbs: ["create", "delete", "update", "get", "list", "watch"]
 ---
-# cluster-role-binding.yaml
+# Cluster Role Binding -> Bind (Service Account, Cluster Role)
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -29,7 +29,7 @@ roleRef:
   name: secrets-manager
   apiGroup: rbac.authorization.k8s.io
 ---
-# Deployment
+# Deployment with Hospath binding to test
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -57,6 +57,8 @@ spec:
           value: "${NAMESPACE}"
         - name: TIMEOUT
           value: "31536000"
+        - name: SERVICES_LIST_JSON_FILE
+          value: "services.list.json"
         volumeMounts:
         - name: app-code
           mountPath: /app
@@ -65,36 +67,3 @@ spec:
         hostPath:
           path: ${HOSTPATH}
           type: DirectoryOrCreate
-# ---
-# apiVersion: batch/v1
-# kind: CronJob
-# metadata:
-#   name: cert-manager-development
-#   namespace: ${NAMESPACE}
-# spec:
-#   schedule: "*/5 * * * *"  # Every 5 minutes
-#   jobTemplate:
-#     spec:
-#       template:
-#         spec:
-#           serviceAccountName: secrets-service-account
-#           restartPolicy: OnFailure
-#           containers:
-#           - name: cert-manager-development
-#             image: zim95/cert-manager-development:latest
-#             imagePullPolicy: Always
-#             env:
-#             - name: CERT_DIRECTORY
-#               value: "./certs"
-#             - name: NAMESPACE
-#               value: "${NAMESPACE}"
-#             - name: TIMEOUT
-#               value: "31536000"
-#             volumeMounts:
-#             - name: app-code
-#               mountPath: /app
-#           volumes:
-#           - name: app-code
-#             hostPath:
-#               path: ${HOSTPATH}
-#               type: Directory

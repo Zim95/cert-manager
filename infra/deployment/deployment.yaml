@@ -1,0 +1,58 @@
+# Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: secrets-service-account
+  namespace: ${NAMESPACE}
+---
+# Cluster Role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: secrets-manager
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["create", "delete", "update", "get", "list", "watch"]
+---
+# Cluster Role Binding (Service Account, Cluster Role)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: secrets-manager-binding
+subjects:
+- kind: ServiceAccount
+  name: secrets-service-account
+  namespace: ${NAMESPACE}
+roleRef:
+  kind: ClusterRole
+  name: secrets-manager
+  apiGroup: rbac.authorization.k8s.io
+---
+# Cron Job
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cert-manager
+  namespace: ${NAMESPACE}
+spec:
+  schedule: "0 5 * * 0"  # Every 5 minutes
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: secrets-service-account
+          restartPolicy: OnFailure
+          containers:
+          - name: cert-manager
+            image: zim95/cert-manager:latest
+            imagePullPolicy: Always
+            env:
+            - name: CERT_DIRECTORY
+              value: "./certs"
+            - name: NAMESPACE
+              value: "${NAMESPACE}"
+            - name: TIMEOUT
+              value: "31536000"        
+            - name: SERVICES_LIST_JSON_FILE
+              value: "services.list.json"

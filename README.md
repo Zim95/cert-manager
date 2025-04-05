@@ -103,3 +103,13 @@ NOTE: To run anything inside the shell, activate the virtualenv. But to run anyt
 
 3. Removing a dependency
     - `poetry remove <package>`
+
+
+# Adding a new service
+1. Simply add the service name to services.list.json.
+
+
+# Prod deployment
+1. Build: `make prod_build`.
+2. Setup: `make prod_setup`.
+3. Teardown: `make prod_teardown`.

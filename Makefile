@@ -17,12 +17,12 @@ dev_teardown:
 
 # Production
 prod_build:
-	./scripts/deployment/development-build.sh $(USER_NAME) $(REPO_NAME)
+	./scripts/deployment/build.sh $(USER_NAME) $(REPO_NAME)
 
 prod_setup:
-	./scripts/deployment/development-setup.sh $(NAMESPACE) $(HOST_DIR)
+	./scripts/deployment/setup.sh $(NAMESPACE)
 
 prod_teardown:
-	./scripts/deployment/development-teardown.sh $(NAMESPACE)
+	./scripts/deployment/teardown.sh $(NAMESPACE)
 
 .PHONY: dev_build dev_setup dev_teardown prod_build prod_setup prod_teardown
