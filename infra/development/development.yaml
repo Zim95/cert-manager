@@ -1,0 +1,100 @@
+# service-account.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: secrets-service-account
+  namespace: ${NAMESPACE}
+---
+# cluster-role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: secrets-manager
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["create", "delete", "update", "get", "list", "watch"]
+---
+# cluster-role-binding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: secrets-manager-binding
+subjects:
+- kind: ServiceAccount
+  name: secrets-service-account
+  namespace: ${NAMESPACE}
+roleRef:
+  kind: ClusterRole
+  name: secrets-manager
+  apiGroup: rbac.authorization.k8s.io
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-manager-development
+  namespace: ${NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cert-manager-development
+  template:
+    metadata:
+      labels:
+        app: cert-manager-development
+    spec:
+      serviceAccountName: secrets-service-account
+      containers:
+      - name: cert-manager-development
+        image: zim95/cert-manager-development:latest
+        imagePullPolicy: Always
+        env:
+        - name: CERT_DIRECTORY
+          value: "./certs"
+        - name: NAMESPACE
+          value: "${NAMESPACE}"
+        - name: TIMEOUT
+          value: "31536000"
+        volumeMounts:
+        - name: app-code
+          mountPath: /app
+      volumes:
+      - name: app-code
+        hostPath:
+          path: ${HOSTPATH}
+          type: DirectoryOrCreate
+# ---
+# apiVersion: batch/v1
+# kind: CronJob
+# metadata:
+#   name: cert-manager-development
+#   namespace: ${NAMESPACE}
+# spec:
+#   schedule: "*/5 * * * *"  # Every 5 minutes
+#   jobTemplate:
+#     spec:
+#       template:
+#         spec:
+#           serviceAccountName: secrets-service-account
+#           restartPolicy: OnFailure
+#           containers:
+#           - name: cert-manager-development
+#             image: zim95/cert-manager-development:latest
+#             imagePullPolicy: Always
+#             env:
+#             - name: CERT_DIRECTORY
+#               value: "./certs"
+#             - name: NAMESPACE
+#               value: "${NAMESPACE}"
+#             - name: TIMEOUT
+#               value: "31536000"
+#             volumeMounts:
+#             - name: app-code
+#               mountPath: /app
+#           volumes:
+#           - name: app-code
+#             hostPath:
+#               path: ${HOSTPATH}
+#               type: Directory

@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "cert-manager"
+version = "0.1.0"
+description = "Manages certificates for our microservices"
+authors = ["Namah Shrestha <shresthanamah@gmail.com>"]
+license = "Apache License 2.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.12"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
