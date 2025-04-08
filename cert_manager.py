@@ -67,13 +67,13 @@ def get_certificate_config(base_cert_directory: str, namespace: str, service_nam
         "secret_name": f"{service_name}-certs",
         "ca_common_name": f"{service_name}-ca",
         "client_common_name": f"{service_name}-client",
-        "server_common_name": f"{service_name}.{namespace}.svc.cluster.local",
+        "server_common_name": f"{service_name}",
         "certificate_list": [
             "ca.crt", "ca.key", "ca.srl",
             "server.csr", "server.key", "server.crt",
             "client.csr", "client.key", "client.crt",
         ],
-        "certificate_cleanup_list": ["server.csr", "client.csr"],
+        "certificate_cleanup_list": ["server.csr", "client.csr", "ca.srl"],
         "certificate_expiration": 365
     }
 
@@ -198,7 +198,7 @@ def create_client_cert(cert_directory: str, expiration: int) -> None:
         raise Exception(e)
 
 
-def create_server_csr(cert_directory: str, common_name: str) -> None:
+def create_server_csr(cert_directory: str, common_name: str, namespace: str) -> None:
     """
     Create the Server Certificate Signing Request in the cert_directory.
     :params:
@@ -208,7 +208,7 @@ def create_server_csr(cert_directory: str, common_name: str) -> None:
 
     Author: Namah Shrestha
     """
-    san: str = f"subjectAltName=DNS:{common_name}"
+    san: str = f"subjectAltName=DNS:{common_name}.{namespace}.svc.cluster.local"
     command: str = (
         f"openssl req -new -nodes "
         f"-out {cert_directory}/server.csr "
@@ -364,7 +364,7 @@ def generate_service_certs(
         create_ca(cert_directory=certificate_config["cert_directory"], common_name=certificate_config["ca_common_name"])  # create CA
         create_client_csr(cert_directory=certificate_config["cert_directory"], common_name=certificate_config["client_common_name"])  # create client CSR
         create_client_cert(cert_directory=certificate_config["cert_directory"], expiration=certificate_config["certificate_expiration"])  # create client cert
-        create_server_csr(cert_directory=certificate_config["cert_directory"], common_name=certificate_config["server_common_name"])  # create server CSR
+        create_server_csr(cert_directory=certificate_config["cert_directory"], common_name=certificate_config["server_common_name"], namespace=namespace)  # create server CSR
         create_server_cert(cert_directory=certificate_config["cert_directory"], expiration=certificate_config["certificate_expiration"])  # create server cert
         remove_files(cert_directory=certificate_config["cert_directory"], file_list=certificate_config["certificate_cleanup_list"])  # cleanup unnecessary certs: csr basically
 
@@ -389,7 +389,7 @@ def generate_service_certs(
     "--generate_k8s_secrets",
     type=bool,
     default=True,
-    help="If set to true, certificates are stored as k8s secrets."
+    help="If set, certificates are stored as k8s secrets."
 )
 def main(generate_k8s_secrets: bool) -> None:
     try:

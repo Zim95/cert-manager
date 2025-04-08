@@ -113,3 +113,17 @@ NOTE: To run anything inside the shell, activate the virtualenv. But to run anyt
 1. Build: `make prod_build`.
 2. Setup: `make prod_setup`.
 3. Teardown: `make prod_teardown`.
+
+
+# Run a cron job immediately
+Sometimes you need to run a cron job immediately. You can do that by hitting the following command:
+```
+kubectl create job --from=cronjob/<your-cronjob-name> <job-name> -n <namespace>
+```
+In our case, it would be:
+```
+kubectl create job --from=cronjob/cert-manager-development-service cert-manager-development-service -n development
+```
+
+
+

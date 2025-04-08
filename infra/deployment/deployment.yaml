@@ -36,9 +36,10 @@ metadata:
   name: cert-manager
   namespace: ${NAMESPACE}
 spec:
-  schedule: "0 5 * * 0"  # Every 5 minutes
+  schedule: "0 5 * * 0"  # Sunday at 5:00 AM
   jobTemplate:
     spec:
+      ttlSecondsAfterFinished: 900  # Pods will be deleted after 15 minutes
       template:
         spec:
           serviceAccountName: secrets-service-account
