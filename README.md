@@ -115,5 +115,5 @@ kubectl create job --from=cronjob/<your-cronjob-name> <job-name> -n <namespace>
 ```
 In our case, it would be:
 ```
-kubectl create job --from=cronjob/cert-manager-development-service cert-manager-development-service -n development
+kubectl create job --from=cronjob/cert-manager cert-manager-job -n browseterm-new
 ```
