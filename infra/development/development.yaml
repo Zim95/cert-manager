@@ -48,7 +48,7 @@ spec:
       serviceAccountName: secrets-service-account
       containers:
       - name: cert-manager-development
-        image: zim95/cert-manager-development:latest
+        image: ${REPO_NAME}/cert-manager-development:latest
         imagePullPolicy: Always
         env:
         - name: CERT_DIRECTORY

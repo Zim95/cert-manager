@@ -46,7 +46,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: cert-manager
-            image: zim95/cert-manager:latest
+            image: ${REPO_NAME}/cert-manager:latest
             imagePullPolicy: Always
             env:
             - name: CERT_DIRECTORY
