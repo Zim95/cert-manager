@@ -392,9 +392,25 @@ def generate_service_certs(
     help="If set, certificates are stored as k8s secrets."
 )
 def main(generate_k8s_secrets: bool) -> None:
+    """
+    Main function to generate certificates for the services.
+    :params:
+        :generate_k8s_secrets: bool: If set, certificates are stored as k8s secrets.
+    :returns: None
+    """
     try:
-        with open(SERVICES_LIST_JSON_FILE, "r") as fr:
-            services_list: list[str] = json.loads(fr.read())
+        '''
+        If the SERVICES environment variable is set, it will be used to generate certificates for the services.
+        If the SERVICES environment variable is not set, the services will be read from the SERVICES_LIST_JSON_FILE.
+        '''
+        services: str = os.getenv("SERVICES", None)
+        if services:
+            print("Received services: ", services)
+            services_list = [s.strip() for s in services.split(',')]
+        else:
+            print("Picking services from the file: ", SERVICES_LIST_JSON_FILE)
+            with open(SERVICES_LIST_JSON_FILE, "r") as fr:
+                services_list: list[str] = json.loads(fr.read())
         for service in services_list:
             generate_service_certs(BASE_CERT_DIRECTORY, NAMESPACE, service, generate_k8s_secrets)
     except Exception as e:
