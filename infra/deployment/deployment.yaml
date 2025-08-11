@@ -11,9 +11,9 @@ kind: ClusterRole
 metadata:
   name: secrets-manager
 rules:
-- apiGroups: [""]
-  resources: ["secrets"]
-  verbs: ["create", "delete", "update", "get", "list", "watch"]
+- apiGroups: ["", "apps"]
+  resources: ["secrets", "deployments"]
+  verbs: ["create", "delete", "update", "get", "list", "watch", "patch"]
 ---
 # Cluster Role Binding (Service Account, Cluster Role)
 apiVersion: rbac.authorization.k8s.io/v1

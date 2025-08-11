@@ -12,6 +12,7 @@ import logging
 import sys
 import json
 import base64
+from datetime import datetime
 
 # third party
 import kubernetes
@@ -384,6 +385,62 @@ def generate_service_certs(
         raise Exception(e)
 
 
+def rollout_service_deployments(service_name: str, namespace: str) -> None:
+    """
+    Find deployments associated with a service and trigger rollout by updating annotations.
+    :params:
+        :service_name: str: The name of the service.
+        :namespace: str: The namespace.
+    :returns: None
+
+    Author: Namah Shrestha
+    """
+    try:
+        deployment_identifier: str = '-'.join(service_name.split("-")[:-1])
+        kubernetes.config.load_incluster_config()
+        apps_v1 = kubernetes.client.AppsV1Api()
+
+        # Find deployments that match the service name or use the service
+        deployments = apps_v1.list_namespaced_deployment(namespace=namespace)
+
+        rollout_triggered = False
+        for deployment in deployments.items:
+            deployment_name = deployment.metadata.name
+            
+            # Check if deployment is associated with this service
+            # Option 1: Deployment name matches service name
+            # Option 2: Deployment name starts with service name
+            # Option 3: Deployment has labels that reference the service
+
+            if (deployment_name == deployment_identifier or 
+                deployment_name.startswith(f"{deployment_identifier}-") or
+                (deployment.metadata.labels and 
+                 deployment.metadata.labels.get("app") == deployment_identifier)):
+
+                # Update annotation to trigger rollout
+                if not deployment.spec.template.metadata.annotations:
+                    deployment.spec.template.metadata.annotations = {}
+
+                # This change triggers automatic rollout
+                deployment.spec.template.metadata.annotations["cert-manager/restart"] = datetime.now().isoformat()
+
+                apps_v1.patch_namespaced_deployment(
+                    name=deployment_name,
+                    namespace=namespace,
+                    body=deployment
+                )
+
+                logger.info(f"Triggered rollout for deployment {deployment_name} (service: {service_name})")
+                rollout_triggered = True
+
+        if not rollout_triggered:
+            logger.info(f"No deployments found for service {service_name}")
+
+    except Exception as e:
+        logger.error(f"Error triggering rollout for service {service_name}: {e}")
+        raise Exception(e)
+
+
 @click.command()
 @click.option(
     "--generate_k8s_secrets",
@@ -391,16 +448,25 @@ def generate_service_certs(
     default=True,
     help="If set, certificates are stored as k8s secrets."
 )
-def main(generate_k8s_secrets: bool) -> None:
+@click.option(
+    "--trigger_rollouts",
+    type=bool,
+    default=True,
+    help="If set, trigger deployment rollouts after certificate updates."
+)
+def main(generate_k8s_secrets: bool, trigger_rollouts: bool) -> None:
     """
     Main function to generate certificates for the services.
     :params:
         :generate_k8s_secrets: bool: If set, certificates are stored as k8s secrets.
+        :trigger_rollouts: bool: If set, trigger deployment rollouts after certificate updates.
     :returns: None
     """
     try:
         '''
         If the SERVICES environment variable is set, it will be used to generate certificates for the services.
+            - This is for cases where we need to create certificates for dynamically generated services.
+                For example - In our case, Web Socket Pods and Services that are generated based on the user's request.
         If the SERVICES environment variable is not set, the services will be read from the SERVICES_LIST_JSON_FILE.
         '''
         services: str = os.getenv("SERVICES", None)
@@ -413,6 +479,11 @@ def main(generate_k8s_secrets: bool) -> None:
                 services_list: list[str] = json.loads(fr.read())
         for service in services_list:
             generate_service_certs(BASE_CERT_DIRECTORY, NAMESPACE, service, generate_k8s_secrets)
+            
+            # Trigger deployment rollouts if requested
+            if trigger_rollouts:
+                logger.info(f"Triggering rollout for service: {service}")
+                rollout_service_deployments(service, NAMESPACE)
     except Exception as e:
         logger.error(f"Error in main: {e}")
         raise Exception(e)

@@ -103,12 +103,13 @@ NOTE: To run anything inside the shell, activate the virtualenv. But to run anyt
 
 
 # Prod deployment
+Once you are done with dev changes. You can make a production setup.
 1. Build: `make prod_build`.
 2. Setup: `make prod_setup`.
 3. Teardown: `make prod_teardown`.
 
 
-# Run a cron job immediately
+# Create a job from the cronjob to run immediately
 Sometimes you need to run a cron job immediately. You can do that by hitting the following command:
 ```
 kubectl create job --from=cronjob/<your-cronjob-name> <job-name> -n <namespace>

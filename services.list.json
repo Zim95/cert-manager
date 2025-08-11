@@ -1,6 +1,5 @@
 [
     "container-maker-development-service",
     "container-maker-service",
-    "socket-ssh-development-service",
-    "socket-ssh-service"
+    "socket-ssh-development-service"
 ]
